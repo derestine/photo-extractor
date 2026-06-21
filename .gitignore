@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
+
+# Face-orientation model is auto-downloaded on first run
+models/
+
+# Inputs / outputs / scratch — never commit personal photos
+raw/
+out/
+inspect/
+diag_out/
+probe_out/
+*.png
+
