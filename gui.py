@@ -10,6 +10,7 @@ Reuses the pipeline from photo_extractor.py — no duplicated logic.
 
 from __future__ import annotations
 
+import os
 import platform
 import queue
 import subprocess
@@ -104,9 +105,9 @@ class ExtractorGUI(tk.Tk):
         self.inner_id = self.canvas.create_window((0, 0), window=self.grid_frame, anchor="nw")
         self.grid_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
         self.canvas.bind("<Configure>", self._on_canvas_resize)
-        # Mouse-wheel scrolling (mac/Win/Linux).
-        self.canvas.bind("<Enter>", lambda e: self.canvas.bind_all("<MouseWheel>", self._on_wheel))
-        self.canvas.bind("<Leave>", lambda e: self.canvas.unbind_all("<MouseWheel>"))
+        # Mouse-wheel scrolling: <MouseWheel> on macOS/Windows, <Button-4/5> on Linux.
+        self.canvas.bind("<Enter>", self._bind_wheel)
+        self.canvas.bind("<Leave>", self._unbind_wheel)
 
         self._placeholder = ttk.Label(self.grid_frame, text="No results yet — choose a folder and press Process.",
                                       foreground="#888", padding=20)
@@ -136,8 +137,25 @@ class ExtractorGUI(tk.Tk):
     def _on_canvas_resize(self, _event) -> None:
         self.canvas.itemconfigure(self.inner_id, width=self.canvas.winfo_width())
 
+    def _bind_wheel(self, _event) -> None:
+        self.canvas.bind_all("<MouseWheel>", self._on_wheel)
+        self.canvas.bind_all("<Button-4>", self._on_wheel)
+        self.canvas.bind_all("<Button-5>", self._on_wheel)
+
+    def _unbind_wheel(self, _event) -> None:
+        for ev in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.canvas.unbind_all(ev)
+
     def _on_wheel(self, event) -> None:
-        self.canvas.yview_scroll(int(-event.delta / 120), "units")
+        # Windows: event.delta is a multiple of 120. macOS: a small signed int.
+        # Linux: no delta; event.num is 4 (up) or 5 (down).
+        if event.num == 4:
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5:
+            self.canvas.yview_scroll(1, "units")
+        elif event.delta:
+            step = -event.delta // 120 if abs(event.delta) >= 120 else -event.delta
+            self.canvas.yview_scroll(step, "units")
 
     # --- processing ---------------------------------------------------------
     def _start(self) -> None:
@@ -241,14 +259,15 @@ def _thumbnail(path: Path) -> tuple[ImageTk.PhotoImage | None, str]:
 
 def _reveal(path: Path) -> None:
     """Open a file or folder in the platform's default viewer."""
+    p = str(path)
     sysname = platform.system()
     try:
-        if sysname == "Darwin":
-            subprocess.Popen(["open", str(path)])
-        elif sysname == "Windows":
-            subprocess.Popen(["explorer", str(path)])
+        if sysname == "Windows":
+            os.startfile(p)  # type: ignore[attr-defined]  # Windows-only; opens file or folder.
+        elif sysname == "Darwin":
+            subprocess.Popen(["open", p])
         else:
-            subprocess.Popen(["xdg-open", str(path)])
+            subprocess.Popen(["xdg-open", p])
     except Exception:
         pass
 

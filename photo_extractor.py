@@ -602,6 +602,7 @@ def main() -> int:
     ap.add_argument("--no-orient", action="store_true", help="skip auto-orientation (face-based)")
     ap.add_argument("--no-deskew", action="store_true", help="skip residual-tilt leveling")
     ap.add_argument("--remove-dates", action="store_true", help="remove printed date stamps (experimental; review outputs)")
+    ap.add_argument("--skip-existing", action="store_true", help="skip scans whose output JPG already exists")
     ap.add_argument("-q", "--quality", type=int, default=95, help="JPEG quality (1-100, default 95)")
     args = ap.parse_args()
 
@@ -614,6 +615,11 @@ def main() -> int:
 
     photos = 0
     for f in files:
+        if args.skip_existing:
+            existing = list(args.output.glob(f"{f.stem}.jpg")) + list(args.output.glob(f"{f.stem}_*.jpg"))
+            if existing:
+                print(f"  - {f.name}: output exists, skipping")
+                continue
         photos += process_file(
             f,
             args.output,

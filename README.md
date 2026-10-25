@@ -20,25 +20,34 @@ Date-stamp removal is available as an experimental, opt-in step.
 
 ## Requirements
 
-- macOS (the GUI's Tcl/Tk step is macOS-specific; the CLI works anywhere)
-- [uv](https://docs.astral.sh/uv/) for Python dependency management
-- For the **GUI only**: `brew install tcl-tk@8` (the uv Python ships a Tcl/Tk
-  8.6 `_tkinter` but omits the 8.6 script library; the launcher wires it up
-  automatically once tcl-tk@8 is installed)
+- **CLI**: macOS, Linux, or Windows.
+- **GUI**: macOS, Linux, or Windows (Tkinter).
+- [uv](https://docs.astral.sh/uv/) for Python dependency management.
+- **macOS GUI only**: `brew install tcl-tk@8`. The uv-managed Python ships a
+  Tcl/Tk 8.6 `_tkinter` but omits the 8.6 script library; `run_gui.command`
+  wires it up automatically once tcl-tk@8 is installed. (Windows and Linux uv
+  builds bundle Tcl/Tk, so no extra step there.)
 
 ## Quick start
 
 ```bash
-git clone <this-repo> photo-extractor
+git clone https://github.com/derestine/photo-extractor.git
 cd photo-extractor
 uv sync                       # install Python deps (opencv, pillow, pillow-heif)
 
 # CLI — process a folder of scans
 uv run photo_extractor.py raw/ -o out/
-
-# GUI — double-click the launcher, or:
-./run_gui.command
 ```
+
+Launch the GUI per platform:
+
+| Platform | How to launch |
+|----------|---------------|
+| macOS    | double-click `run_gui.command`, or `./run_gui.command` |
+| Windows  | double-click `run_gui.bat`, or `run_gui.bat` in a terminal |
+| Linux    | `uv run python gui.py` |
+
+(Any platform can also run `uv run python gui.py` directly.)
 
 ## CLI usage
 
